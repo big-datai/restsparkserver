@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.myntelligence</groupId>
+    <artifactId>myntelligence-analytics</artifactId>
+    <version>3.0.5-SNAPSHOT</version>
+
+
+
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <url>http://nexus.mynsystems.com:8081/repository/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <url>http://nexus.mynsystems.com:8081/repository/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+
+
+
+    <!-- Common properties -->
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <scala.version>2.11.11</scala.version>
+    </properties>
+
+
+    <!-- Profiles -->
+    <profiles>
+
+        <profile>
+            <id>local</id>
+            <activation>
+                <property>
+                    <name>env</name>
+                    <value>local</value>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources/local</directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+
+        <profile>
+            <id>stage</id>
+            <activation>
+                <property>
+                    <name>env</name>
+                    <value>stage</value>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources/stage</directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+
+        <profile>
+            <id>prod</id>
+            <activation>
+                <property>
+                    <name>env</name>
+                    <value>prod</value>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources/prod</directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
+
+
+
+    <!-- Build -->
+    <build>
+
+        <finalName>myntelligence-analytics</finalName>
+
+        <!-- Plugins -->
+        <sourceDirectory>src/main/scala</sourceDirectory>
+        <!--<testSourceDirectory>src/test/scala</testSourceDirectory>-->
+        <plugins>
+
+            <plugin>
+                <!-- see http://davidb.github.com/scala-maven-plugin -->
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                    <launchers>
+                        <launcher>
+                            <id>webserver</id>
+                            <mainClass>com.mynt.routes.RunServer</mainClass>
+                            <!-- args are optional -->
+                            <!--<args>-->
+                                <!--<arg>arg1</arg>-->
+                            <!--</args>-->
+                            <!-- jvmArgs are optional -->
+                            <jvmArgs>
+                                <jvmArg>-Xmx512m</jvmArg>
+                                <jvmArg>-Djava.library.path=...</jvmArg>
+                            </jvmArgs>
+                        </launcher>
+                        <!-- you could define other launcher -->
+                    </launchers>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <args>
+                                <arg>-dependencyfile</arg>
+                                <arg>${project.build.directory}/.scala_dependencies</arg>
+                            </args>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-plugin</artifactId>
+                <version>1.9.5</version>
+                <configuration>
+                    <goals>install</goals>
+                </configuration>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.18.1</version>
+                <configuration>
+                    <useFile>false</useFile>
+                    <disableXmlReport>true</disableXmlReport>
+                    <!-- If you have classpath issue like NoDefClassError,... -->
+                    <!-- useManifestOnlyJar>false</useManifestOnlyJar -->
+                    <includes>
+                        <include>**/*Test.*</include>
+                        <include>**/*Suite.*</include>
+                    </includes>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>external.atlassian.jgitflow</groupId>
+                <artifactId>jgitflow-maven-plugin</artifactId>
+                <version>1.0-m5.1</version>
+                <configuration>
+                    <pushReleases>true</pushReleases>
+                    <keepBranch>false</keepBranch>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <noTag>true</noTag>
+                    <allowUntracked>true</allowUntracked>
+                    <pullDevelop>true</pullDevelop>
+                    <pullMaster>true</pullMaster>
+                    <allowSnapshots>true</allowSnapshots>
+                    <flowInitContext>
+                        <masterBranchName>master</masterBranchName>
+                        <developBranchName>develop</developBranchName>
+                        <featureBranchPrefix>feature-</featureBranchPrefix>
+                        <releaseBranchPrefix>release-</releaseBranchPrefix>
+                        <hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
+                        <versionTagPrefix>version-</versionTagPrefix>
+                    </flowInitContext>
+                </configuration>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.myntelligence.text.tranformation.ScrapperService</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>reference.conf</resource>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- Dependencies -->
+    <dependencies>
+        <!-- Only when running against Akka 2.5 explicitly depend on akka-streams in same version as akka-actor -->
+        <dependency>
+        <groupId>com.typesafe.akka</groupId>
+        <artifactId>akka-http_2.11</artifactId>
+        <version>10.0.10</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-http-spray-json_2.11</artifactId>
+            <version>10.0.10</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-jdbc</artifactId>
+            <version>2.3.1</version>
+        </dependency>-->
+
+        <!-- https://mvnrepository.com/artifact/datastax/spark-cassandra-connector -->
+        <!--<dependency>-->
+            <!--<groupId>datastax</groupId>-->
+            <!--<artifactId>spark-cassandra-connector</artifactId>-->
+            <!--<version>2.0.0-RC1-s_2.11</version>-->
+            <!--<scope>system</scope>-->
+            <!--<systemPath>/Users/dmitry/classification-stack/myntelligence-analytics/src/spark-cassandra-connector-2.0.1-s_2.11.jar</systemPath>-->
+        <!--</dependency>-->
+
+        <!-- https://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector -->
+        <dependency>
+            <groupId>com.datastax.spark</groupId>
+            <artifactId>spark-cassandra-connector_2.11</artifactId>
+            <version>2.0.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.scala-logging</groupId>
+            <artifactId>scala-logging_2.11</artifactId>
+            <version>3.5.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.1.7</version>
+        </dependency>
+
+        <!--<dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch-spark-20_2.11</artifactId>
+            <version>6.0.0-alpha-1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.asynchttpclient</groupId>
+            <artifactId>async-http-client</artifactId>
+            <version>2.0.37</version>
+        </dependency>-->
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.11</artifactId>
+            <version>2.2.0</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_2.11</artifactId>
+            <version>2.2.0</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.6.5</version>
+        </dependency>
+
+    </dependencies>
+</project>
