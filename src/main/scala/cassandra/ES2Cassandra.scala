@@ -1,27 +1,18 @@
 package cassandra
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SparkSession
-
-import scala.collection.mutable.{ArrayBuffer, LinkedHashMap, Map}
-import scala.util.Success
-import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
-import scala.collection.mutable.Buffer
-import scala.util.Try
+import scala.collection.mutable.{ArrayBuffer, Buffer, LinkedHashMap, Map}
+import scala.util.{Success, Try}
 
 /**
   * Created by dmitry on 10/26/17.
   */
 object ES2Cassandra extends App {
-  // ./start-thriftserver.sh --packages com.datastax.spark:spark-cassandra-connector_2.11:2.0.5-s2.11 --conf spark.cassandra.connection.host=127.0.0.1 --conf spark.cassandra.auth.username=cassandra --conf spark.cassandra.auth.password=""
-  //./start-thriftserver.sh --packages org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0-alpha-1,datastax:spark-cassandra-connector:2.0.5-s_2.11 --conf spark.cassandra.connection.host=127.0.0.1 --conf spark.cassandra.auth.username=cassandra --conf spark.cassandra.auth.password=""
   //  ./spark/bin/spark-shell --master "local[*]" --packages org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0-alpha-1,datastax:spark-cassandra-connector:2.0.5-s_2.11 --conf spark.es.nodes="34.252.202.146"  --conf spark.es.port="9200" --conf spark.es.index.auto.create=true  --conf spark.es.nodes.wan.only=true --conf spark.cassandra.connection.host=127.0.0.1 --conf spark.cassandra.auth.username=cassandra --conf spark.cassandra.auth.password=""
 
-  //  ./start-thriftserver.sh --master "local[2]" --packages datastax:spark-cassandra-connector:2.0.5-s_2.11 --conf spark.cassandra.connection.host=127.0.0.1 --conf spark.cassandra.auth.username=cassandra --conf spark.cassandra.auth.password=""
-  //  System.setProperty("hadoop.home.dir", "C:\\workspace\\spark-windows\\winutils")
-  //
   val conf = new SparkConf(true)
   //    .set("spark.cassandra.connection.host", "52.212.77.202")
   //    .set("spark.cassandra.auth.username", "cassandra")
@@ -55,13 +46,13 @@ object ES2Cassandra extends App {
 
       val verticals = Try(listsString("verticals")).getOrElse(Buffer.empty[String])
       val subVerticals = Array[Long](0L) //TODO
-      val purchases = Try(listsString("purchases")).getOrElse(Buffer.empty[String])
+    val purchases = Try(listsString("purchases")).getOrElse(Buffer.empty[String])
       val subPurchases = Try(listsString("sub_purchases")).getOrElse(Buffer.empty[String])
 
       val ids = profileRow.get("ids")
       val idsMap = ids.getOrElse(LinkedHashMap.empty[String, Buffer[String]]).asInstanceOf[LinkedHashMap[String, Buffer[String]]]
       val mynIds = Try(idsMap.getOrElse("myn_id", Buffer("none"))).getOrElse(Buffer("none")) //Try(idsMap.getOrElse("myn_id", Buffer("none"))).getOrElse(Buffer("none"): _*))
-      val appnexusIds = Try(idsMap.getOrElse("appnexus_ids", Buffer("none"))).getOrElse(Buffer("none"))
+    val appnexusIds = Try(idsMap.getOrElse("appnexus_ids", Buffer("none"))).getOrElse(Buffer("none"))
       val profileIds = Try(idsMap.getOrElse("7data_id", Buffer("none"))).getOrElse(Buffer("none"))
       val activity = profileRow.get("activity")
 
@@ -103,6 +94,7 @@ object ES2Cassandra extends App {
   val uuid = udf(() => java.util.UUID.randomUUID().toString)
 
   import spark.implicits._
+
   val profilesDF = pc.withColumn("verticals", explode($"_11"))
     .withColumn("sub_verticals", explode($"_12"))
     .withColumn("purchases", explode($"_13"))
@@ -251,7 +243,6 @@ object ES2Cassandra extends App {
   val events4 = events3DB.join(p, "profile_id").drop("profile_id").withColumnRenamed("p_profile_id", "profile_id")
 
 
-
   def eraseLong(seq: Buffer[String]): Array[Long] = {
     val array = erase(seq, "0")
     val result = array.map { v =>
@@ -279,42 +270,42 @@ object ES2Cassandra extends App {
 
 case class Event(
                   id: String
-                 , source: String
-                 , sourceid: String
-                 , domain: String
-                 , path: String
-                 , event_type: String
-                 , created_at: java.sql.Date
-                 , profile_id: String
-                 , referrer: String
-                 , document_referrer: String
-                 , url: String
-                 , gender: String
-                 , account_id: Long
-                 , authenticated: Boolean
-                 , loyalty: Boolean
-                 , age_from: Long
-                 , age_to: Long
-                 , os_name: String
-                 , os_version: String
-                 , location_lat: String
-                 , location_lng: String
-                 , location_country: String
-                 , location_city: String
-                 , location_region: String
-                 , cookie_key: String
-                 , cookie_value: String
-                 , device_type: String
-                 , device_brand: String
-                 , device_model: String
-                 , device_browser: String
-                 , verticals: Array[Long]
-                , sub_verticals: Array[Long]
-                , purchases: Array[Long]
-                , sub_purchases: Array[Long]
-                , campaign_id: Long
-                , lineitem_id: Long
-                , creative_id: Long
-                , enriched_at: java.sql.Date
+                  , source: String
+                  , sourceid: String
+                  , domain: String
+                  , path: String
+                  , event_type: String
+                  , created_at: java.sql.Date
+                  , profile_id: String
+                  , referrer: String
+                  , document_referrer: String
+                  , url: String
+                  , gender: String
+                  , account_id: Long
+                  , authenticated: Boolean
+                  , loyalty: Boolean
+                  , age_from: Long
+                  , age_to: Long
+                  , os_name: String
+                  , os_version: String
+                  , location_lat: String
+                  , location_lng: String
+                  , location_country: String
+                  , location_city: String
+                  , location_region: String
+                  , cookie_key: String
+                  , cookie_value: String
+                  , device_type: String
+                  , device_brand: String
+                  , device_model: String
+                  , device_browser: String
+                  , verticals: Array[Long]
+                  , sub_verticals: Array[Long]
+                  , purchases: Array[Long]
+                  , sub_purchases: Array[Long]
+                  , campaign_id: Long
+                  , lineitem_id: Long
+                  , creative_id: Long
+                  , enriched_at: java.sql.Date
                 )
 

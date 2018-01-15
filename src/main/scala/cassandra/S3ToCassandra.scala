@@ -29,7 +29,7 @@ class S3ToCassandra {
     import java.util.Date
     import org.apache.spark.sql.SaveMode
 
-    val profiles = spark.read.format("org.apache.spark.sql.cassandra").options(Map("table" -> "profiles3", "keyspace" -> "analytics")).load()
+    val profiles = spark.read.format("org.apache.spark.sql.cassandra").options(Map("table" -> "profiles5", "keyspace" -> "analytics")).load()
     val events = spark.read.format("org.apache.spark.sql.cassandra").options(Map("table" -> "events4", "keyspace" -> "analytics")).load()
 
     profiles.write.mode(SaveMode.Append).save("s3n://dimamynt/profiles")

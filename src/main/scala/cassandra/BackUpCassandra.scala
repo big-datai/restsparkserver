@@ -17,27 +17,31 @@ class BackUpCassandra extends App {
 
   sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", "")
   sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", "")
+
   import org.apache.spark.sql.SaveMode
+
   val profiles = spark.read.format("org.apache.spark.sql.cassandra").options(Map("table" -> "profiles3", "keyspace" -> "analytics")).load()
   val events = spark.read.format("org.apache.spark.sql.cassandra").options(Map("table" -> "events4", "keyspace" -> "analytics")).load()
   val urls = spark.read.format("org.apache.spark.sql.cassandra").options(Map("table" -> "urls", "keyspace" -> "analytics")).load()
   profiles.write.mode(SaveMode.Overwrite).save("s3n://dimamynt/profiles3")
   events.write.mode(SaveMode.Overwrite).save("s3n://dimamynt/events4")
- urls.write.mode(SaveMode.Overwrite).save("s3n://dimamynt/urls")
-//RESTORE
+  urls.write.mode(SaveMode.Overwrite).save("s3n://dimamynt/urls")
+  //RESTORE
 
   sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", "")
   sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", "")
+
   import org.apache.spark.sql.SaveMode
+
   val restore_prof = spark.read.load("s3n://dimamynt/profiles3")
   val restore_even = spark.read.load("s3n://dimamynt/events4")
   val resotre_urls = spark.read.load("s3n://dimamynt/urls")
-//write_request_timeout_in_ms: 20000
+  //write_request_timeout_in_ms: 20000
   restore_prof.repartition(150).write.mode(SaveMode.Append).format("org.apache.spark.sql.cassandra").options(Map("table" -> "profiles3", "keyspace" -> "analytics")).save()
   restore_even.repartition(150).write.mode(SaveMode.Append).format("org.apache.spark.sql.cassandra").options(Map("table" -> "events4", "keyspace" -> "analytics")).save()
   resotre_urls.repartition(150).write.mode(SaveMode.Append).format("org.apache.spark.sql.cassandra").options(Map("table" -> "urls", "keyspace" -> "analytics")).save()
 
-val pe=profiles.join(events,profiles("profile_id")===events("profile_id"),"left_outer")
+  val pe = profiles.join(events, profiles("profile_id") === events("profile_id"), "left_outer")
 
 
 }
