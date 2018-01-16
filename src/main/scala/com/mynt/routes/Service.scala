@@ -1,6 +1,7 @@
 package com.mynt.routes
 
-import spray.json.{DefaultJsonProtocol, JsonFormat, RootJsonFormat}
+
+import org.json4s.{DefaultFormats, Formats}
 
 import scala.concurrent.Future
 
@@ -26,24 +27,25 @@ case class Join(
                )
 
 case class Expression(
-                       field: String
-                       , operator: String
-                       , value: Array[String]
-                       , or: Option[Expression]
-                       , and: Option[Expression]
+                       field: Option[String]
+                       , operator: Option[String]
+                       , value: Option[Array[String]]
+                       , or: Option[Seq[Expression]]
+                       , and: Option[Seq[Expression]]
                      )
 
-trait Protocols extends DefaultJsonProtocol {
+trait Protocols extends DefaultFormats {
 
-  implicit val joinFormat: JsonFormat[Join] = jsonFormat4(Join.apply)
-  implicit val filterFormat: JsonFormat[Filter] = lazyFormat(jsonFormat(Filter, "and", "or", "concatOperator"))
-  implicit val expressionFormat: JsonFormat[Expression] = lazyFormat(jsonFormat(Expression
-    , "field"
-    , "operator"
-    , "value"
-    , "or"
-    , "and"))
-  implicit val queryFormat: RootJsonFormat[Query] = jsonFormat6(Query.apply)
+//  implicit val formats = DefaultFormats
+//  implicit val joinFormat: Formats[Join] = jsonFormat4(Join.apply)
+//  implicit val filterFormat: JsonFormat[Filter] = lazyFormat(jsonFormat(Filter, "and", "or", "concatOperator"))
+//  implicit val expressionFormat: JsonFormat[Expression] = lazyFormat(jsonFormat(Expression
+//    , "field"
+//    , "operator"
+//    , "value"
+//    , "or"
+//    , "and"))
+//  implicit val queryFormat: RootJsonFormat[Query] = jsonFormat7(Query.apply)
 }
 
 trait Service extends Protocols {
@@ -52,13 +54,23 @@ trait Service extends Protocols {
     val join = Join("events", Some("inner"), "profile_id", Some("profile_id"))
     val group = Some(Seq("profiles.purchases"))
     val expressionAnd = List(
-      Expression("first", ">=", Array("2017-01-01"), None, None)
-      , Expression("last", "<=", Array("2017-10-10"), None, None)
-      , Expression("account_id", "=", Array("7"), None, None)
+      Expression(Some("first"), Some(">="), Some(Array("2017-01-01")), None, Some(Seq(Expression(Some("inner first"), Some(">="), Some(Array("2017-02-02")), None, None))))
+      , Expression(Some("last"), Some("<="), Some(Array("2017-10-10")), None, None)
+      , Expression(Some("account_id"), Some("="), Some(Array("7")), None, None)
     )
-    val expressionOr = Expression("gender", "=", Array("m"),
-      Some(Expression("age_from", "=", Array("1"), Some(Expression("age_to", "=", Array("10"), None, None)), None)), None)
-    val filter = Filter(Some(expressionAnd), Some(List(expressionOr)), Some("OR"))
-    Future.successful(Right(Query("profiles", List("profiles.purchases", "COUNT(profiles.purchases)"), Some(join), Some(filter), group, Some(100))))
+//    val expressionOr = Expression(Some("gender"), Some("="), Some(Array("m")),
+//      Some(Seq(Expression(Some("age_from"), Some("="), Some(Array("1"))), Some(Expression(Some("age_to"), Some("="), Some(Array("10")), None, None)), None))), None)
+    val filter = Filter(Some(expressionAnd), None, Some("OR"))
+    Future.successful(
+      Right(
+        Query("profiles", List("profiles.purchases", "COUNT(profiles.purchases)")
+          , join = Some(join)
+          , filter = Some(filter)
+          , groupBy = group
+          , orderBy = None
+          , limit = Some(100)
+        )
+      )
+    )
   }
 }

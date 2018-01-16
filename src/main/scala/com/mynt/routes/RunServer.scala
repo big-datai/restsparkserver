@@ -46,20 +46,14 @@ object RunServer extends Service with RunQuerySevice with LazyLogging {
 
 
   def main(args: Array[String]) {
-    import spray.json
-
-
-    import com.datastax.spark.connector._ //Loads implicit functions
-    // needed to run the route
-    import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-
     val eventsDF = spark
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(Map("table" -> "events4", "keyspace" -> "analytics"))
       .load().persist(StorageLevel.MEMORY_AND_DISK_2)
 
-    eventsDF.createOrReplaceTempView("events")
+    tables.put("events", eventsDF.as('events))
+    //eventsDF.createOrReplaceTempView("events")
     //spark.sql("SELECT count(*) FROM events").collect()
 
     val profilesDF = spark
@@ -68,24 +62,26 @@ object RunServer extends Service with RunQuerySevice with LazyLogging {
       .options(Map("table" -> "profiles3", "keyspace" -> "analytics"))
       .load().persist(StorageLevel.MEMORY_AND_DISK_2)
 
-    profilesDF.createOrReplaceTempView("profiles")
+    tables.put("profiles", profilesDF.as('profiles))
+
+    //profilesDF.createOrReplaceTempView("profiles")
     //spark.sql("SELECT count(*) FROM profiles").collect()
 
     val route: Route = {
       logRequestResult("mynt-cassandra") {
         pathPrefix("myntelligence" / "api" / "v1") {
-          get {
+          /*get {
             complete {
               fetchExampleQeury().map[ToResponseMarshallable] {
                 case Right(query) => query
                 case Left(errorMessage) => BadRequest -> errorMessage
               }
             }
-          } ~ path("query" / "json") {
-            (post & entity(as[Query])) { q =>
+          } ~ */ path("query" / "json") {
+            (post & entity(as[String])) { q =>
               complete {
                 try {
-                  runQueryJSON(q, spark) match {
+                  runQueryJSON(q) match {
                     case Success(data) => HttpEntity(ContentTypes.`application/json`, data)
                     case Failure(ex) => HttpResponse(StatusCodes.InternalServerError, entity = s"${ex.getMessage}")
                   }
@@ -97,14 +93,14 @@ object RunServer extends Service with RunQuerySevice with LazyLogging {
               }
             }
           } ~ path("query" / "sql") {
-            (post & entity(as[Query])) { q =>
+            (post & entity(as[String])) { q =>
               complete {
                 try {
-                  OK -> makeQueryBody(q)
+                  OK -> makeQueryBody(q).toString
                 } catch {
                   case ex: Throwable =>
                     logger.error(ex.getMessage, ex)
-                    StatusCodes.InternalServerError -> s"Error found for query"
+                    StatusCodes.InternalServerError -> s"Error found for query $q [${ex.getMessage}]"
                 }
               }
             }
