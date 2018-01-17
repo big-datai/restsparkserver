@@ -33,11 +33,14 @@ trait RunQuerySevice extends LazyLogging {
   }
 
   def runQueryJSON(json: String): Try[Array[Byte]] = {
-    val df = tables.head._2.sparkSession.sql(makeQueryBody(json))
+    val df = tables.head._2.sparkSession.sql(makeQueryBody(json)) // Get spark session and execute SQL
     runQuery(df)
   }
 
   def runQuery(sql: String, spark: SparkSession): Try[Array[Byte]] = {
+    tables.foreach { entry =>
+      entry._2.createOrReplaceTempView(entry._1)
+    }
     runQuery(spark.sql(sql))
   }
 
@@ -61,7 +64,7 @@ trait RunQuerySevice extends LazyLogging {
 
   def getTable(json: JValue): String = {
     val table = json \ "table" match {
-      case JString(s) => s
+      case JString(t) => t // t - it must be a table name
       case _ => throw new Throwable(s"JSON object doesn't contain table name definition")
     }
 
@@ -132,8 +135,8 @@ trait RunQuerySevice extends LazyLogging {
     }
 
     val result = new mutable.ListBuffer[String]()
-    if (!andFilter.isEmpty) result += (andFilter)
-    if (!orFilter.isEmpty) result += (orFilter)
+    if (!andFilter.isEmpty) result += andFilter
+    if (!orFilter.isEmpty) result += orFilter
     //val result = Seq(andFilter, orFilter).filter(_.asInstanceOf[List].nonEmpty)
 
     if (result.isEmpty) "" else result.mkString("WHERE (", s") $concatOp (", ")")

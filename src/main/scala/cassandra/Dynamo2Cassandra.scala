@@ -51,12 +51,12 @@ class Dynamo2Cassandra {
 
 
 
-  val ftext=text.map{
-    l=>
-      val attributes = l.getAs[WrappedArray[String]]("keywords")
-      //val attMapAge = l.getOrElse(LinkedHashMap()).asInstanceOf[LinkedHashMap[String, LinkedHashMap[String, Long]]]
-      attributes
-  }
+//  val ftext=text.map{
+//    l=>
+//      val attributes = l.getAs[WrappedArray[String]]("keywords")
+//      //val attMapAge = l.getOrElse(LinkedHashMap()).asInstanceOf[LinkedHashMap[String, LinkedHashMap[String, Long]]]
+//      attributes
+//  }
 
   //.write.mode(SaveMode.Append).format("org.apache.spark.sql.cassandra").options(Map("table" -> "textclassificationcache", "keyspace" -> "analytics")).save()
 

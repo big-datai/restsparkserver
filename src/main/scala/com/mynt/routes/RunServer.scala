@@ -23,16 +23,17 @@ object RunServer extends Service with RunQuerySevice with LazyLogging {
   //implicit val itemFormat = jsonFormat2(Item)
   //implicit val orderFormat = jsonFormat1(Order)
 
-  System.setProperty("hadoop.home.dir", "C:\\workspace\\spark-windows\\winutils")
+  //System.setProperty("hadoop.home.dir", "C:\\workspace\\spark-windows\\winutils")
   val configSpark: Config = ConfigFactory.load().getConfig("application.spark")
   val configServer: Config = ConfigFactory.load().getConfig("application.standalone-http")
   val configCassandra: Config = ConfigFactory.load().getConfig("application.cassandra")
+  val configTables: Config = ConfigFactory.load().getConfig("application.analytics-tables")
 
-  val conf = new SparkConf(true)
+  val conf: SparkConf = new SparkConf(true)
     .set("spark.cassandra.connection.host", configCassandra.getString("host"))
     .set("spark.cassandra.auth.username", configCassandra.getString("username"))
     .set("spark.cassandra.auth.password", configCassandra.getString("password"))
-  val spark = SparkSession
+  val spark: SparkSession = SparkSession
     .builder()
     .config(conf)
     .appName("WebServerMyntelligenceCassandra")
@@ -49,17 +50,15 @@ object RunServer extends Service with RunQuerySevice with LazyLogging {
     val eventsDF = spark
       .read
       .format("org.apache.spark.sql.cassandra")
-      .options(Map("table" -> "events4", "keyspace" -> "analytics"))
+      .options(Map("table" -> configTables.getString("events"), "keyspace" -> "analytics"))
       .load().persist(StorageLevel.MEMORY_AND_DISK_2)
 
     tables.put("events", eventsDF.as('events))
-    //eventsDF.createOrReplaceTempView("events")
-    //spark.sql("SELECT count(*) FROM events").collect()
 
     val profilesDF = spark
       .read
       .format("org.apache.spark.sql.cassandra")
-      .options(Map("table" -> "profiles3", "keyspace" -> "analytics"))
+      .options(Map("table" -> configTables.getString("profiles"), "keyspace" -> "analytics"))
       .load().persist(StorageLevel.MEMORY_AND_DISK_2)
 
     tables.put("profiles", profilesDF.as('profiles))
