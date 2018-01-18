@@ -157,7 +157,9 @@ trait RunQuerySevice extends LazyLogging {
     if (!field.isEmpty && !oper.isEmpty) {
       builder
         .append(field)
+        .append(" ")
         .append(oper)
+        .append(" ")
         .append(v)
     }
 
